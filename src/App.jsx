@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
 import Papa from 'papaparse';
 
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_PTFlGYO25K83M-Eo8_toJR03s0pCW5Yk9b7RfR2_ErR0wmu_9h7DF06pnojg-hah11ndjGyzszep/pub?output=csv";
+// --- IMPORTANTE: INCOLLA QUI SOTTO IL TUO LINK CSV ---
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_PTFlGYO25K83M-Eo8_toJR03s0pCW5Yk9b7RfR2_ErR0wmu_9h7DF06pnojg-hah11ndjGyzszep/pub?output=csv"; 
 
 const COLORS = {
   bg: '#1B2623',
@@ -14,12 +15,16 @@ const COLORS = {
 
 const GlobalStyles = () => (
   <style>{`
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: ${COLORS.bg};
+      width: 100%;
+      overscroll-behavior-y: none; /* Blocca il rimbalzo elastico */
+      -webkit-tap-highlight-color: transparent; /* Toglie il flash blu al tocco */
+    }
     body { 
-      background-color: ${COLORS.bg}; 
-      width: 100%; 
-      overflow-x: hidden; 
-      -webkit-font-smoothing: antialiased;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     #root { width: 100%; }
   `}</style>
@@ -34,25 +39,24 @@ const ScrollToTop = () => {
 // --- COMPONENTI ---
 
 const MenuItem = ({ name, desc, price }) => {
-  // Logica per i prezzi: trasforma 4.5 in 4,50 e aggiunge €
-  const formattedPrice = parseFloat(price.toString().replace(',', '.'))
-    .toFixed(2)
-    .replace('.', ',');
+  // Gestione sicura del prezzo
+  const safePrice = price ? price.toString().replace(',', '.') : "0";
+  const formattedPrice = parseFloat(safePrice).toFixed(2).replace('.', ',');
 
   return (
     <div style={{
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      padding: '24px 0',
+      padding: '20px 0', // Ridotto leggermente il padding per meno scroll
       borderBottom: `1px solid rgba(244, 241, 234, 0.08)`,
       width: '100%'
     }}>
-      <div style={{ flex: 1, paddingRight: '20px', textAlign: 'left' }}>
-        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: COLORS.text, fontWeight: '600', fontFamily: 'Inter' }}>{name}</h3>
-        <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted, lineHeight: '1.6', fontStyle: 'italic' }}>{desc}</p>
+      <div style={{ flex: 1, paddingRight: '15px', textAlign: 'left' }}>
+        <h3 style={{ margin: '0 0 6px 0', fontSize: '17px', color: COLORS.text, fontWeight: '600', fontFamily: 'sans-serif' }}>{name}</h3>
+        <p style={{ margin: 0, fontSize: '13px', color: COLORS.textMuted, lineHeight: '1.4' }}>{desc}</p>
       </div>
-      <div style={{ fontWeight: '700', fontSize: '18px', color: COLORS.accent, fontFamily: 'Inter', whiteSpace: 'nowrap' }}>
+      <div style={{ fontWeight: '700', fontSize: '17px', color: COLORS.accent, whiteSpace: 'nowrap' }}>
         {formattedPrice}€
       </div>
     </div>
@@ -61,32 +65,21 @@ const MenuItem = ({ name, desc, price }) => {
 
 const CategoryPage = ({ menuData }) => {
   const { id } = useParams();
-  const items = menuData[id] || [];
+  const items = menuData ? (menuData[id] || []) : [];
 
   return (
-    <div style={{ 
-      backgroundColor: COLORS.bg, 
-      minHeight: '100vh', 
-      width: '100%',
-      padding: '0 20px' 
-    }}>
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '500px', 
-        margin: '0 auto', // Centra il blocco senza usare Flexbox (evita vibrazioni)
-        paddingTop: '40px',
-        paddingBottom: '40px'
-      }}>
-        <Link to="/" style={{ textDecoration: 'none', color: COLORS.accent, fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', display: 'inline-block', marginBottom: '30px', textTransform: 'uppercase' }}>
-          ← TORNA AL MENU
+    <div style={{ minHeight: '100dvh', width: '100%', padding: '0 20px', backgroundColor: COLORS.bg }}>
+      <div style={{ width: '100%', maxWidth: '500px', margin: '0 auto', paddingTop: '30px', paddingBottom: '50px' }}>
+        <Link to="/" style={{ textDecoration: 'none', color: COLORS.accent, fontSize: '14px', fontWeight: 'bold', letterSpacing: '1px', display: 'inline-block', marginBottom: '25px', textTransform: 'uppercase' }}>
+          ← Indietro
         </Link>
         <h1 style={{ 
-          fontFamily: 'Playfair Display', color: COLORS.text, fontSize: '38px', marginBottom: '40px',
-          textTransform: 'capitalize', borderLeft: `5px solid ${COLORS.accent}`, paddingLeft: '20px', textAlign: 'left'
+          fontFamily: 'serif', color: COLORS.text, fontSize: '32px', marginBottom: '30px',
+          textTransform: 'capitalize', borderLeft: `4px solid ${COLORS.accent}`, paddingLeft: '15px', textAlign: 'left'
         }}>
-          {id.replace(/-/g, ' ')}
+          {id ? id.replace(/-/g, ' ') : 'Caricamento...'}
         </h1>
-        <div style={{ width: '100%' }}>
+        <div>
           {items.map((item, index) => (
             <MenuItem key={index} {...item} />
           ))}
@@ -97,41 +90,52 @@ const CategoryPage = ({ menuData }) => {
 };
 
 const Home = ({ menuData }) => {
-  const categories = Object.keys(menuData);
+  const categories = menuData ? Object.keys(menuData) : [];
 
   return (
     <div style={{ 
       width: '100%',
-      minHeight: '100vh',
+      minHeight: '100dvh', // Usa l'altezza dinamica moderna
       backgroundColor: COLORS.bg,
       display: 'flex',
       flexDirection: 'column',
-      justifyContent: 'center', // Centra i bottoni nella Home
+      justifyContent: 'center',
       alignItems: 'center',
-      padding: '60px 20px'
+      padding: '40px 20px'
     }}>
       <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-        <header style={{ marginBottom: '60px' }}>
-          <h1 style={{ fontFamily: 'Playfair Display', fontSize: '52px', margin: 0, color: COLORS.text, letterSpacing: '3px' }}>Le Radici</h1>
-          <div style={{ height: '2px', width: '60px', backgroundColor: COLORS.accent, margin: '20px auto' }}></div>
-          <p style={{ color: COLORS.textMuted, fontSize: '13px', letterSpacing: '5px', textTransform: 'uppercase' }}>Rovereto</p>
+        <header style={{ marginBottom: '50px' }}>
+          <h1 style={{ fontFamily: 'serif', fontSize: '48px', margin: 0, color: COLORS.text, letterSpacing: '2px' }}>Le Radici</h1>
+          <div style={{ height: '2px', width: '50px', backgroundColor: COLORS.accent, margin: '15px auto' }}></div>
+          <p style={{ color: COLORS.textMuted, fontSize: '12px', letterSpacing: '4px', textTransform: 'uppercase' }}>Rovereto</p>
         </header>
 
-        <main style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {categories.map(catId => (
-            <Link key={catId} to={`/category/${catId}`} style={{ textDecoration: 'none' }}>
-              <div style={{
-                padding: '28px', fontSize: '15px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '3px',
-                borderRadius: '20px', background: `linear-gradient(145deg, ${COLORS.surface}, #151d1b)`, color: COLORS.text,
-                border: `1px solid rgba(197, 160, 89, 0.2)`, boxShadow: '0 12px 24px rgba(0,0,0,0.4)', fontFamily: 'Inter'
-              }}>
-                {catId.replace(/-/g, ' ')}
-              </div>
-            </Link>
-          ))}
-        </main>
+        {/* Verifica se il link è rotto */}
+        {categories.length === 0 ? (
+          <div style={{ color: COLORS.accent, border: `1px solid ${COLORS.accent}`, padding: '20px', borderRadius: '8px' }}>
+            {menuData === null ? "Caricamento Menu..." : "Nessun prodotto trovato. Controlla il Link CSV!"}
+          </div>
+        ) : (
+          <main style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {categories.map(catId => (
+              <Link key={catId} to={`/category/${catId}`} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  padding: '24px', fontSize: '14px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '2px',
+                  borderRadius: '16px', 
+                  backgroundColor: COLORS.surface, // Rimossa la sfumatura pesante per performance
+                  color: COLORS.text,
+                  border: `1px solid rgba(197, 160, 89, 0.3)`,
+                  fontFamily: 'sans-serif',
+                  transform: 'translateZ(0)' // Forza l'accelerazione hardware
+                }}>
+                  {catId.replace(/-/g, ' ')}
+                </div>
+              </Link>
+            ))}
+          </main>
+        )}
 
-        <footer style={{ marginTop: '80px', color: COLORS.textMuted, fontSize: '10px', letterSpacing: '2px' }}>
+        <footer style={{ marginTop: '60px', color: COLORS.textMuted, fontSize: '10px', letterSpacing: '2px', opacity: 0.7 }}>
           &copy; 2026 LE RADICI ROVERETO
         </footer>
       </div>
@@ -141,12 +145,18 @@ const Home = ({ menuData }) => {
 
 export default function App() {
   const [menuData, setMenuData] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Se non c'è il link, non provare nemmeno a caricare
+    if (SHEET_URL === "INCOLLA_QUI_IL_TUO_LINK_CSV") {
+        setMenuData({}); // Mette un oggetto vuoto per mostrare l'avviso
+        return;
+    }
+
     Papa.parse(SHEET_URL, {
       download: true,
       header: true,
+      skipEmptyLines: true, // Salta le righe vuote automaticamente
       complete: (results) => {
         const groupedData = {};
         results.data.forEach(item => {
@@ -156,18 +166,13 @@ export default function App() {
           groupedData[cat].push(item);
         });
         setMenuData(groupedData);
-        setLoading(false);
+      },
+      error: (err) => {
+          console.error("Errore nel caricamento:", err);
+          setMenuData({});
       }
     });
   }, []);
-
-  if (loading) {
-    return (
-      <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bg, color: COLORS.accent }}>
-        <p style={{ fontFamily: 'Inter', letterSpacing: '2px' }}>CARICAMENTO MENU...</p>
-      </div>
-    );
-  }
 
   return (
     <Router>
