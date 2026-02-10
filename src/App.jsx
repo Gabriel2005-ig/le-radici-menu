@@ -105,7 +105,6 @@ const ScrollToTop = () => {
 
 // --- COMPONENTI ---
 
-// MODIFICATO: ora accetta "desc" invece di "description"
 const MenuItem = ({ name, desc, price }) => (
   <div style={{
     display: 'flex',
@@ -117,7 +116,6 @@ const MenuItem = ({ name, desc, price }) => (
   }}>
     <div style={{ flex: 1, paddingRight: '20px', textAlign: 'left' }}>
       <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: COLORS.text, fontWeight: '600', fontFamily: 'Inter' }}>{name}</h3>
-      {/* MODIFICATO: visualizza "desc" */}
       <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted, lineHeight: '1.6', fontStyle: 'italic' }}>{desc}</p>
     </div>
     <div style={{ fontWeight: '700', fontSize: '18px', color: COLORS.accent, fontFamily: 'Inter', whiteSpace: 'nowrap' }}>
@@ -136,12 +134,15 @@ const CategoryPage = () => {
       minHeight: '100vh', 
       width: '100%',
       display: 'flex',
-      justifyContent: 'center'
+      flexDirection: 'column', 
+      alignItems: 'center', // CORREZIONE: Forza l'allineamento centrale
+      padding: '0 20px' // CORREZIONE: Aggiunge padding laterale di sicurezza
     }}>
       <div style={{ 
         width: '100%', 
         maxWidth: '500px', 
-        padding: '40px 25px'
+        paddingTop: '40px',
+        paddingBottom: '40px'
       }}>
         <Link to="/" style={{ textDecoration: 'none', color: COLORS.accent, fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', display: 'inline-block', marginBottom: '30px' }}>
           ← TORNA AL MENU
@@ -184,12 +185,14 @@ const Home = () => {
       width: '100%',
       display: 'flex',
       justifyContent: 'center',
-      alignItems: 'center' 
+      alignItems: 'center',
+      padding: '0 20px' // CORREZIONE: Padding laterale per evitare che tocchi i bordi
     }}>
       <div style={{ 
         width: '100%', 
         maxWidth: '400px', 
-        padding: '60px 25px',
+        paddingTop: '60px', 
+        paddingBottom: '60px',
         textAlign: 'center'
       }}>
         <header style={{ marginBottom: '60px' }}>
