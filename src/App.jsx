@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
 import Papa from 'papaparse';
 
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_PTFlGYO25K83M-Eo8_toJR03s0pCW5Yk9b7RfR2_ErR0wmu_9h7DF06pnojg-hah11ndjGyzszep/pub?output=csv";
+const SHEET_URL = "IL_TUO_LINK_CSV_QUI";
 
 const COLORS = {
   bg: '#1B2623',
@@ -15,8 +15,13 @@ const COLORS = {
 const GlobalStyles = () => (
   <style>{`
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background-color: ${COLORS.bg}; width: 100%; overflow-x: hidden; }
-    #root { width: 100%; display: flex; justify-content: center; }
+    body { 
+      background-color: ${COLORS.bg}; 
+      width: 100%; 
+      overflow-x: hidden; 
+      -webkit-font-smoothing: antialiased;
+    }
+    #root { width: 100%; }
   `}</style>
 );
 
@@ -26,33 +31,53 @@ const ScrollToTop = () => {
   return null;
 };
 
-const MenuItem = ({ name, desc, price }) => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: '24px 0',
-    borderBottom: `1px solid rgba(244, 241, 234, 0.08)`,
-    width: '100%'
-  }}>
-    <div style={{ flex: 1, paddingRight: '20px', textAlign: 'left' }}>
-      <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: COLORS.text, fontWeight: '600', fontFamily: 'Inter' }}>{name}</h3>
-      <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted, lineHeight: '1.6', fontStyle: 'italic' }}>{desc}</p>
+// --- COMPONENTI ---
+
+const MenuItem = ({ name, desc, price }) => {
+  // Logica per i prezzi: trasforma 4.5 in 4,50 e aggiunge €
+  const formattedPrice = parseFloat(price.toString().replace(',', '.'))
+    .toFixed(2)
+    .replace('.', ',');
+
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      padding: '24px 0',
+      borderBottom: `1px solid rgba(244, 241, 234, 0.08)`,
+      width: '100%'
+    }}>
+      <div style={{ flex: 1, paddingRight: '20px', textAlign: 'left' }}>
+        <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: COLORS.text, fontWeight: '600', fontFamily: 'Inter' }}>{name}</h3>
+        <p style={{ margin: 0, fontSize: '14px', color: COLORS.textMuted, lineHeight: '1.6', fontStyle: 'italic' }}>{desc}</p>
+      </div>
+      <div style={{ fontWeight: '700', fontSize: '18px', color: COLORS.accent, fontFamily: 'Inter', whiteSpace: 'nowrap' }}>
+        {formattedPrice}€
+      </div>
     </div>
-    <div style={{ fontWeight: '700', fontSize: '18px', color: COLORS.accent, fontFamily: 'Inter', whiteSpace: 'nowrap' }}>
-      {price}€
-    </div>
-  </div>
-);
+  );
+};
 
 const CategoryPage = ({ menuData }) => {
   const { id } = useParams();
   const items = menuData[id] || [];
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '0 15px' }}>
-      <div style={{ width: '100%', maxWidth: '500px', paddingTop: '40px', paddingBottom: '40px' }}>
-        <Link to="/" style={{ textDecoration: 'none', color: COLORS.accent, fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', display: 'inline-block', marginBottom: '30px' }}>
+    <div style={{ 
+      backgroundColor: COLORS.bg, 
+      minHeight: '100vh', 
+      width: '100%',
+      padding: '0 20px' 
+    }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '500px', 
+        margin: '0 auto', // Centra il blocco senza usare Flexbox (evita vibrazioni)
+        paddingTop: '40px',
+        paddingBottom: '40px'
+      }}>
+        <Link to="/" style={{ textDecoration: 'none', color: COLORS.accent, fontSize: '14px', fontWeight: 'bold', letterSpacing: '2px', display: 'inline-block', marginBottom: '30px', textTransform: 'uppercase' }}>
           ← TORNA AL MENU
         </Link>
         <h1 style={{ 
@@ -75,8 +100,17 @@ const Home = ({ menuData }) => {
   const categories = Object.keys(menuData);
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 15px' }}>
-      <div style={{ width: '100%', maxWidth: '400px', paddingTop: '60px', paddingBottom: '60px', textAlign: 'center' }}>
+    <div style={{ 
+      width: '100%',
+      minHeight: '100vh',
+      backgroundColor: COLORS.bg,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center', // Centra i bottoni nella Home
+      alignItems: 'center',
+      padding: '60px 20px'
+    }}>
+      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
         <header style={{ marginBottom: '60px' }}>
           <h1 style={{ fontFamily: 'Playfair Display', fontSize: '52px', margin: 0, color: COLORS.text, letterSpacing: '3px' }}>Le Radici</h1>
           <div style={{ height: '2px', width: '60px', backgroundColor: COLORS.accent, margin: '20px auto' }}></div>
