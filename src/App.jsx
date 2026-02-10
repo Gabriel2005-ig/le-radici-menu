@@ -103,6 +103,15 @@ const ScrollToTop = () => {
   return null;
 };
 
+// --- STILI GLOBALI (Fondamentale per il centraggio) ---
+const GlobalStyles = () => (
+  <style>{`
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: ${COLORS.bg}; width: 100%; overflow-x: hidden; }
+    #root { width: 100%; display: flex; justify-content: center; }
+  `}</style>
+);
+
 // --- COMPONENTI ---
 
 const MenuItem = ({ name, desc, price }) => (
@@ -130,17 +139,15 @@ const CategoryPage = () => {
 
   return (
     <div style={{ 
-      backgroundColor: COLORS.bg, 
-      minHeight: '100vh', 
       width: '100%',
+      minHeight: '100vh',
       display: 'flex',
-      flexDirection: 'column', 
-      alignItems: 'center', // CORREZIONE: Forza l'allineamento centrale
-      padding: '0 20px' // CORREZIONE: Aggiunge padding laterale di sicurezza
+      justifyContent: 'center', // Centra orizzontalmente
+      padding: '0 15px' // Margine di sicurezza
     }}>
       <div style={{ 
         width: '100%', 
-        maxWidth: '500px', 
+        maxWidth: '500px', // Non diventa mai più largo di così
         paddingTop: '40px',
         paddingBottom: '40px'
       }}>
@@ -180,13 +187,12 @@ const Home = () => {
 
   return (
     <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: COLORS.bg, 
       width: '100%',
+      minHeight: '100vh',
       display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '0 20px' // CORREZIONE: Padding laterale per evitare che tocchi i bordi
+      justifyContent: 'center', // Centra orizzontalmente
+      alignItems: 'center', // Centra verticalmente
+      padding: '0 15px' 
     }}>
       <div style={{ 
         width: '100%', 
@@ -241,6 +247,7 @@ const Home = () => {
 export default function App() {
   return (
     <Router>
+      <GlobalStyles />
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
