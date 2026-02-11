@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useLocation } from 'react-router-dom';
 import Papa from 'papaparse';
+// 1. IMPORTIAMO FRAMER MOTION
+import { motion } from "framer-motion";
 
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_PTFlGYO25K83M-Eo8_toJR03s0pCW5Yk9b7RfR2_ErR0wmu_9h7DF06pnojg-hah11ndjGyzszep/pub?output=csv"; 
 
@@ -9,9 +11,12 @@ const COLORS = {
   surface: '#2A3431',
   accent: '#C5A059',
   text: '#F4F1EA',
-  textMuted: '#9DA6A2'
+  textMuted: '#9DA6A2',
+  skeletonBase: '#2A3431', // Colore base dello scheletro
+  skeletonHighlight: '#36423F' // Colore del luccichio
 };
 
+// 2. AGGIUNTA ANIMAZIONE SKELETON AI GLOBAL STYLES
 const GlobalStyles = () => (
   <style>{`
     html, body {
@@ -19,31 +24,101 @@ const GlobalStyles = () => (
       padding: 0;
       background-color: ${COLORS.bg};
       width: 100%;
-      overscroll-behavior-y: none; /* Cambiato in none per gestire noi il refresh */
+      overscroll-behavior-y: none;
       -webkit-tap-highlight-color: transparent;
     }
     body { 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     #root { width: 100%; }
+
+    /* Animazione Shimmer per gli Skeleton */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton {
+      background: ${COLORS.skeletonBase};
+      background-image: linear-gradient(90deg, ${COLORS.skeletonBase} 25%, ${COLORS.skeletonHighlight} 50%, ${COLORS.skeletonBase} 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite linear;
+      border-radius: 4px;
+    }
   `}</style>
 );
 
-// --- COMPONENTI ---
+// --- COMPONENTI SKELETON (Nuovi) ---
 
+// Skeleton per una singola riga di drink (Titolo, Descrizione, Prezzo)
+const SkeletonDrinkItem = () => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '20px 0', borderBottom: `1px solid rgba(244, 241, 234, 0.05)` }}>
+    <div style={{ flex: 1 }}>
+      {/* Titolo finto */}
+      <div className="skeleton" style={{ height: '20px', width: '65%', marginBottom: '10px' }}></div>
+      {/* Descrizione finta */}
+      <div className="skeleton" style={{ height: '14px', width: '85%' }}></div>
+    </div>
+    {/* Prezzo finto */}
+    <div className="skeleton" style={{ height: '20px', width: '50px', marginLeft: '15px', borderRadius: '8px' }}></div>
+  </div>
+);
+
+// Lista di skeleton per la pagina categoria
+const SkeletonDrinkList = () => (
+  <div style={{ marginTop: '30px' }}>
+    {[...Array(6)].map((_, i) => <SkeletonDrinkItem key={i} />)}
+  </div>
+);
+
+// Skeleton per i bottoni della Home
+const SkeletonCategories = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%' }}>
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="skeleton" style={{ height: '70px', borderRadius: '16px', width: '100%' }}></div>
+    ))}
+  </div>
+);
+
+// --- DEFINIZIONE ANIMAZIONI FRAMER MOTION ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1 // Ritardo tra un elemento e l'altro (effetto cascata)
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 }, // Parte leggermente dal basso e invisibile
+  visible: { 
+    y: 0, 
+    opacity: 1,
+    transition: { type: "spring", stiffness: 100 } // Movimento fluido
+  }
+};
+
+
+// --- COMPONENTI PRINCIPALI ---
+
+// Aggiornato per usare motion.div e le varianti
 const MenuItem = ({ name, desc, price }) => {
   const safePrice = price ? price.toString().replace(',', '.') : "0";
   const formattedPrice = parseFloat(safePrice).toFixed(2).replace('.', ',');
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      padding: '20px 0',
-      borderBottom: `1px solid rgba(244, 241, 234, 0.08)`,
-      width: '100%'
-    }}>
+    <motion.div 
+      variants={itemVariants} // Applica l'animazione al singolo elemento
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        padding: '20px 0',
+        borderBottom: `1px solid rgba(244, 241, 234, 0.08)`,
+        width: '100%'
+      }}
+    >
       <div style={{ flex: 1, paddingRight: '15px', textAlign: 'left' }}>
         <h3 style={{ margin: '0 0 6px 0', fontSize: '17px', color: COLORS.text, fontWeight: '600' }}>{name}</h3>
         <p style={{ margin: 0, fontSize: '13px', color: COLORS.textMuted, lineHeight: '1.4' }}>{desc}</p>
@@ -51,11 +126,11 @@ const MenuItem = ({ name, desc, price }) => {
       <div style={{ fontWeight: '700', fontSize: '17px', color: COLORS.accent, whiteSpace: 'nowrap' }}>
         {formattedPrice}€
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-const CategoryPage = ({ menuData }) => {
+const CategoryPage = ({ menuData, isLoading }) => {
   const { id } = useParams();
   const items = menuData ? (menuData[id] || []) : [];
 
@@ -71,29 +146,33 @@ const CategoryPage = ({ menuData }) => {
         }}>
           {id ? id.replace(/-/g, ' ') : 'Caricamento...'}
         </h1>
-        <div>
-          {items.map((item, index) => (
-            <MenuItem key={index} {...item} />
-          ))}
-        </div>
+
+        {/* LOGICA DI CARICAMENTO: Se sta caricando o non ci sono dati, mostra Skeleton */}
+        {isLoading || !menuData ? (
+          <SkeletonDrinkList />
+        ) : (
+          // Altrimenti mostra la lista animata con motion.div
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {items.map((item, index) => (
+              <MenuItem key={index} {...item} />
+            ))}
+          </motion.div>
+        )}
+
       </div>
     </div>
   );
 };
 
-const Home = ({ menuData }) => {
+const Home = ({ menuData, isLoading }) => {
   const categories = menuData ? Object.keys(menuData) : [];
 
   return (
-    <div style={{ 
-      width: '100%',
-      minHeight: '100dvh',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '40px 20px'
-    }}>
+    <div style={{ width: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px 20px' }}>
       <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
         <header style={{ marginBottom: '50px' }}>
           <h1 style={{ fontFamily: 'serif', fontSize: '48px', margin: 0, color: COLORS.text, letterSpacing: '2px' }}>Le Radici</h1>
@@ -101,9 +180,12 @@ const Home = ({ menuData }) => {
           <p style={{ color: COLORS.textMuted, fontSize: '12px', letterSpacing: '4px', textTransform: 'uppercase' }}>Rovereto</p>
         </header>
 
-        {categories.length === 0 ? (
+        {/* LOGICA CARICAMENTO HOME */}
+        {isLoading || menuData === null ? (
+           <SkeletonCategories />
+        ) : categories.length === 0 ? (
           <div style={{ color: COLORS.accent, border: `1px solid ${COLORS.accent}`, padding: '20px', borderRadius: '8px' }}>
-            {menuData === null ? "Caricamento Menu..." : "Nessun prodotto trovato."}
+            Nessun prodotto trovato.
           </div>
         ) : (
           <main style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -136,12 +218,15 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
+  // Nuovo stato per gestire il loading iniziale in modo pulito
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
-  // Funzione per caricare i dati (usata al mount e al refresh)
-  const loadMenu = useCallback(() => {
+  const loadMenu = useCallback((isInitial = false) => {
     if (SHEET_URL === "INCOLLA_QUI_IL_TUO_LINK_CSV") return;
     
+    if (isInitial) setIsLoadingInitial(true);
     setIsRefreshing(true);
+    
     Papa.parse(SHEET_URL, {
       download: true,
       header: true,
@@ -154,15 +239,18 @@ export default function App() {
           if (!groupedData[cat]) groupedData[cat] = [];
           groupedData[cat].push(item);
         });
-        setMenuData(groupedData);
-        // Ritardo estetico per non far sparire subito lo spinner
+        
+        // Ritardo artificiale per far vedere bene l'animazione (opzionale, puoi toglierlo)
         setTimeout(() => {
+            setMenuData(groupedData);
             setIsRefreshing(false);
+            setIsLoadingInitial(false);
             setPullDistance(0);
-        }, 800);
+        }, 1500); 
       },
       error: () => {
         setIsRefreshing(false);
+        setIsLoadingInitial(false);
         setPullDistance(0);
         setMenuData({});
       }
@@ -170,24 +258,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    loadMenu();
+    loadMenu(true); // Caricamento iniziale
   }, [loadMenu]);
 
-  // Gestione Touch
+  // Gestione Touch (invariata)
   const handleTouchStart = (e) => {
-    if (window.scrollY === 0) {
-      setTouchStart(e.touches[0].clientY);
-    }
+    if (window.scrollY === 0) setTouchStart(e.touches[0].clientY);
   };
 
   const handleTouchMove = (e) => {
     if (touchStart === 0 || window.scrollY > 0) return;
-
     const currentTouch = e.touches[0].clientY;
     const distance = currentTouch - touchStart;
-
     if (distance > 0) {
-      // Resistenza: più tiri, più diventa duro (max 70px)
       const easedDistance = Math.min(distance * 0.4, 70);
       setPullDistance(easedDistance);
       if (e.cancelable) e.preventDefault();
@@ -195,13 +278,13 @@ export default function App() {
   };
 
   const handleTouchEnd = () => {
-    if (pullDistance > 50) {
-      loadMenu();
-    } else {
-      setPullDistance(0);
-    }
+    if (pullDistance > 50) loadMenu();
+    else setPullDistance(0);
     setTouchStart(0);
   };
+
+  // Stato di caricamento globale (o iniziale o refresh)
+  const isLoading = isLoadingInitial || (isRefreshing && menuData === null);
 
   return (
     <div 
@@ -229,22 +312,16 @@ export default function App() {
           zIndex: 1000
         }}>
           <div style={{
-            width: '24px',
-            height: '24px',
-            border: `2px solid ${COLORS.surface}`,
-            borderTop: `2px solid ${COLORS.accent}`,
-            borderRadius: '50%',
-            animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-            transform: `rotate(${pullDistance * 5}deg)`
+            width: '24px', height: '24px', border: `2px solid ${COLORS.surface}`, borderTop: `2px solid ${COLORS.accent}`,
+            borderRadius: '50%', animation: isRefreshing ? 'spin 1s linear infinite' : 'none', transform: `rotate(${pullDistance * 5}deg)`
           }} />
-          <style>{`
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-          `}</style>
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
 
         <Routes>
-          <Route path="/" element={<Home menuData={menuData} />} />
-          <Route path="/category/:id" element={<CategoryPage menuData={menuData} />} />
+          {/* Passiamo lo stato isLoading alle pagine */}
+          <Route path="/" element={<Home menuData={menuData} isLoading={isLoading} />} />
+          <Route path="/category/:id" element={<CategoryPage menuData={menuData} isLoading={isLoading} />} />
         </Routes>
       </Router>
     </div>
